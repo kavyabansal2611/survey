@@ -1,6 +1,6 @@
-from pydantic import BaseModel
+from pydantic import BaseModel,EmailStr,Field
 from typing import List,Literal
-from sqlalchemy import Column,Integer,String,Text
+from sqlalchemy import Column,Integer,String,Text,ForeignKey
 from database import Base
 from pydantic import field_validator
 class UserTable(Base):
@@ -11,21 +11,21 @@ class UserTable(Base):
     age=Column(Integer)
 class Submissions(Base):
     __tablename__="submissions"
-    id=Column(Integer,autoincrement=True)
-    email=Column(String(100),primary_key=True)
+    id=Column(Integer,primary_key=True,autoincrement=True)
+    email=Column(String(100),ForeignKey("users.email"),nullable=False,unique=True)
     chosen_options=Column(Text)
 class User(BaseModel):
-    full_name:str
+    full_name:str=Field(min_length=1,max_length=100)
     age:int
-    gender:Literal["M","F","O"]
-    email:str
+    gender:Literal["M","F"]
+    email:EmailStr
 class Quiz(BaseModel):
     id:int
     question:str
     options: List[str]
 
 class Submit(BaseModel):
-    email:str
+    email:EmailStr
     chosen_options:List[int]
     @field_validator("chosen_options")
     def must15(cls,v):

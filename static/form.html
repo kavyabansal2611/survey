@@ -395,6 +395,7 @@
      if (data.message === "User already exists") {
     showToast('⚠ User already exists.', 'fail');
 } else {
+    sessionStorage.getItem("email",payload.email)
     showToast('✓ Registered! Starting questions')
     setTimeout(() => {
         window.location.href = '/quiz-page'
@@ -406,6 +407,17 @@
       btn.classList.remove('loading');
     }
   }
+    const data = await res.json();
+
+if (data.message === "user already exists") {
+    alert("This email has already been registered!");
+    return;
+}
+
+if (res.ok) {
+    sessionStorage.setItem("email", email);
+    window.location.href = "/quiz-page";
+}
 </script>
 </body>
 </html>
