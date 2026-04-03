@@ -72,7 +72,9 @@ def form_see(request:Request):
 @app.post("/form")
 @limiter.limit("10/minute")
 def create_user(request:Request,u:User,db:Session=Depends(get_db)):
+
     us=db.query(UserTable).filter(UserTable.email==u.email).first()
+    print(us)
     try:
         if us:
             return{
@@ -93,7 +95,9 @@ def create_user(request:Request,u:User,db:Session=Depends(get_db)):
                 "message":"user created successfully"
             }
     except Exception as e:
+        db.rollback()
         raise HTTPException(status_code=422,detail=str(e))
+    print(exc.errors())
 
 
 @app.get("/quiz-page")
@@ -106,9 +110,9 @@ def get_quiz(request:Request):
 @limiter.limit("20/minute")
 def submit_quiz(request:Request,s:Submit,db:Session=Depends(get_db)):
     existing = db.query(Submissions).filter(Submissions.email == s.email).first()
+    if existing:
+        raise HTTPException(status_code=400, detail="You have already submitted")
     try:
-        if existing:
-            raise HTTPException(status_code=400, detail="You have already submitted")
         responses=[]
         for i, chosen in enumerate(s.chosen_options):
             responses.append({
@@ -164,21 +168,18 @@ def get_quiz_results(request:Request,db:Session=Depends(get_db)):
             for i in range(15):
                 female_scores[i] += answers[i]
             female_count += 1
-        elif user.gender=="O":
-            answers = json.loads(sub.chosen_options)
             for i in range(15):
                 other_score[i] += answers[i]
             other_count += 1
         for i in range(15):
             male_avg=round(male_scores[i]/male_count,2) if male_count else 0
             female_avg=round(female_scores[i]/female_count,2) if female_count else 0
-            other_avg=round(other_score[i]/other_count,2) if other_count else 0
     final_results=[]
-    final_results.append({
-        "question": QUESTIONS[i]["question"],
-        "male_avg": male_avg,
-        "female_avg": female_avg,
-        "other_avg": other_avg
+    for i in range(15):
+        final_results.append({
+            "question": QUESTIONS[i]["question"],
+            "male_avg": male_avg,
+            "female_avg": female_avg,
 
         })
 

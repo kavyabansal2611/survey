@@ -339,8 +339,8 @@
             <div class="survey-step" data-step="3">
                 <div class="stph"><div class="stpe">Demographics</div><h2>How do you identify?</h2></div>
                 <div class="gsel" id="gs">
-                    <div class="gopt" data-value="female"><span class="gico">♀</span><span class="glab">Female</span></div>
-                    <div class="gopt" data-value="male"><span class="gico">♂</span><span class="glab">Male</span></div>
+                    <div class="gopt" data-value="F"><span class="gico">♀</span><span class="glab">Female</span></div>
+                    <div class="gopt" data-value="M"><span class="gico">♂</span><span class="glab">Male</span></div>
                 </div>
                 <div class="val-msg" id="genMsg">Please select your gender to continue</div>
             </div>
@@ -377,12 +377,6 @@
         </div>
     </div>
 
-    <div class="rsec" id="rs">
-        <div class="rh"><div class="lbadge"><span class="ldot"></span> Live Results</div><h2>Males vs. Females — Side by Side</h2><p>Average Likert scores for each statement, compared by gender in real time.</p></div>
-        <div class="cgrid" id="cg"></div>
-        <div class="tres"><div class="bnum" id="tc">0</div><p>Total responses and counting</p></div>
-        <div class="rdiv"></div>
-    </div>
 
     <section class="hero"><div class="hero-label">A Survey-Based Study on Gender &amp; Forgiveness</div><h1 class="hero-title"><span class="line"><span class="li">The Forgiveness</span></span><span class="line"><span class="li"><span class="acc">Divide</span></span></span></h1><p class="hero-desc">How do men and women differ in their willingness to forgive? An exploration of empathy, perception, and reconciliation across gender.</p><div class="scroll-cue"><span>Scroll to explore</span><div class="scroll-line"><div class="scroll-line-inner"></div></div></div></section>
 
@@ -435,7 +429,7 @@
         var email=document.getElementById('femail').value.trim();
         if(!name){document.getElementById('fname').classList.add('error');document.getElementById('fnameErr').classList.add('show');ok=false}
         if(!age||parseInt(age)<10||parseInt(age)>99||isNaN(parseInt(age))){document.getElementById('fage').classList.add('error');document.getElementById('fageErr').classList.add('show');ok=false}
-        if(email&&email.indexOf('@')===-1){document.getElementById('femail').classList.add('error');document.getElementById('femailErr').classList.add('show');ok=false}
+        if(!email||email.indexOf('@')===-1){document.getElementById('femail').classList.add('error');document.getElementById('femailErr').classList.add('show');ok=false}
         if(ok){userName=name;userAge=age;userEmail=email}
         return ok;
     }
@@ -498,15 +492,71 @@
         updNav();
     });
 
-    document.getElementById('bs').addEventListener('click',function(){
-        hideAllValMsgs();
-        if(!validateQuestions(11,15)){document.getElementById('valMsg6').classList.add('show');return}
-        var g=gen||'female',entry={};for(var i=1;i<=15;i++)entry['q'+i]=ans['q'+i]||3;
-        if(!db[g])db[g]=[];db[g].push(entry);
-        var ov=document.getElementById('ty');ov.classList.add('show');
-        if(typeof gsap!=='undefined'){gsap.fromTo('.tyo .chk',{scale:0,opacity:0},{scale:1,opacity:1,duration:.6,ease:'back.out(1.7)',delay:.3});gsap.fromTo('.tyo h2',{y:20,opacity:0},{y:0,opacity:1,duration:.5,delay:.6});gsap.fromTo('.tyo p',{y:20,opacity:0},{y:0,opacity:1,duration:.5,delay:.8})}
-        setTimeout(function(){if(typeof gsap!=='undefined'){gsap.to(ov,{opacity:0,duration:.5,onComplete:function(){ov.classList.remove('show');ov.style.cssText='';showR()}})}else{ov.classList.remove('show');ov.style.cssText='';showR()}},2800);
-    });
+    document.getElementById('bs').addEventListener('click', async function(){
+    hideAllValMsgs();
+    if(!validateQuestions(11,15)){document.getElementById('valMsg6').classList.add('show');return}
+    var formPayload = {
+        full_name: userName,
+        age: parseInt(userAge),
+        email: userEmail,
+        gender: gen
+    };
+    try {
+        var r1 = await fetch('/form', {
+            method: 'POST',
+            headers: {'Content-Type':'application/json'},
+            body: JSON.stringify(formPayload)
+        });
+        var d1 = await r1.json();
+        if(d1.message === 'user already exists'){
+            alert('This email is already registered. Please go back and change it.');
+            return;
+        }
+    } catch(e){
+        alert('Could not connect to server.');
+        return;
+    }
+
+    var chosen_options = [];
+    for(var i=1;i<=15;i++) chosen_options.push((ans['q'+i]||3) - 1);
+
+    var formPayload2 = {email: userEmail, chosen_options: chosen_options};
+    try {
+        var r2 = await fetch('/quiz/submit', {
+            method: 'POST',
+            headers: {'Content-Type':'application/json'},
+            body: JSON.stringify(formPayload2)
+        });
+        var d2 = await r2.json();
+        if(!r2.ok){
+            alert(d2.detail || 'Submission failed.');
+            return;
+        }
+    } catch(e){
+        alert('Could not connect to server.');
+        return;
+    }
+    var ov=document.getElementById('ty');ov.classList.add('show');
+    if(typeof gsap!=='undefined'){gsap.fromTo('.tyo .chk',{scale:0,opacity:0},{scale:1,opacity:1,duration:.6,ease:'back.out(1.7)',delay:.3});gsap.fromTo('.tyo h2',{y:20,opacity:0},{y:0,opacity:1,duration:.5,delay:.6});gsap.fromTo('.tyo p',{y:20,opacity:0},{y:0,opacity:1,duration:.5,delay:.8})}
+    setTimeout(async function(){
+
+        try {
+            var r3 = await fetch('/quiz/results');
+            var results = await r3.json();
+
+            db = {female:[], male:[], other:[]};
+            results.forEach(function(row, i){
+
+                if(!db._avgs) db._avgs = [];
+                db._avgs[i] = row;
+            });
+            window._apiResults = results;
+        } catch(e){}
+
+        if(typeof gsap!=='undefined'){gsap.to(ov,{opacity:0,duration:.5,onComplete:function(){ov.classList.remove('show');ov.style.cssText='';showR()}})}
+        else{ov.classList.remove('show');ov.style.cssText='';showR()}
+    }, 2800);
+});
 
     function updNav(){document.getElementById('pf').style.width=((curStep/TS)*100)+'%';document.getElementById('pt').textContent='Step '+curStep+' of '+TS;document.getElementById('bp').disabled=(curStep===1);document.getElementById('bn').style.display=(curStep===TS)?'none':'inline-block';document.getElementById('bs').style.display=(curStep===TS)?'inline-block':'none'}
 
@@ -529,7 +579,14 @@
         var g=document.getElementById('cg');g.innerHTML='';
         var cards=[];
         for(var i=0;i<15;i++){
-            var k='q'+(i+1),fA=av(db.female,k),mA=av(db.male,k);
+            var k='q'+(i+1);
+            var fA, mA;
+            if(window._apiResults && window._apiResults[i]){
+            fA = window._apiResults[i].female_avg;
+            mA = window._apiResults[i].male_avg;
+            } else {
+            fA=av(db.female,k); mA=av(db.male,k);
+            }
             var c=document.createElement('div');c.className='ccard';
             c.style.opacity='0';c.style.transform='translateY(25px)';
             c.innerHTML='<div class="cqn">Question '+String(i+1).padStart(2,'0')+'</div><div class="cqt">'+QS[i]+'</div><div class="cduo"><div class="crow"><div class="cgl f">♀ Female</div><div class="bth"><div class="bfh f" data-w="'+(fA/5*100)+'">'+fA.toFixed(2)+' / 5</div></div></div><div class="crow"><div class="cgl m">♂ Male</div><div class="bth"><div class="bfh m" data-w="'+(mA/5*100)+'">'+mA.toFixed(2)+' / 5</div></div></div></div>';
