@@ -184,7 +184,9 @@ def get_quiz_results(request:Request,db:Session=Depends(get_db)):
         })
 
     return final_results
-
+@app.get("/health")
+def health():
+    return {"status": "ok"}
 
 
 
