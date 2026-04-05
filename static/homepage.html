@@ -398,7 +398,6 @@
     var QS=["I find it difficult to forgive when someone hurts me.","Forgiving someone feels like accepting defeat.","I continue thinking about the hurtful incident for a long time.","I worry that forgiving too easily makes me look weak.","If someone disrespects me, I find it hard to forgive them.","I hold on to anger even after time has passed.","Part of me wants the other person to experience the pain they caused me.","Even after forgiving, I still feel bitterness.","When I am hurt, I feel deeply upset.","Forgiving someone gives me peace of mind.","I try to understand why the other person behaved the way they did.","Knowing that everyone makes mistakes helps me forgive.","I consider the other person's perspective before reacting.","Society influences how I express hurt or forgiveness.","My gender affects how I deal with hurt and forgiveness."];
 
     var TS=6,curStep=1,consentOk=false,gen=null,ans={},cp=0,userName='',userAge='',userEmail='';
-    var db={female:[{q1:4,q2:2,q3:4,q4:2,q5:3,q6:3,q7:2,q8:3,q9:5,q10:4,q11:4,q12:5,q13:4,q14:3,q15:4},{q1:3,q2:1,q3:5,q4:2,q5:4,q6:2,q7:1,q8:3,q9:4,q10:5,q11:5,q12:4,q13:5,q14:4,q15:5},{q1:4,q2:2,q3:4,q4:3,q5:3,q6:3,q7:2,q8:4,q9:5,q10:4,q11:4,q12:4,q13:4,q14:3,q15:4},{q1:3,q2:1,q3:3,q4:2,q5:4,q6:2,q7:1,q8:2,q9:4,q10:5,q11:5,q12:5,q13:5,q14:4,q15:3},{q1:5,q2:3,q3:5,q4:2,q5:4,q6:4,q7:3,q8:4,q9:5,q10:4,q11:3,q12:4,q13:3,q14:3,q15:4},{q1:3,q2:2,q3:4,q4:1,q5:3,q6:2,q7:2,q8:3,q9:4,q10:5,q11:4,q12:5,q13:4,q14:4,q15:5}],male:[{q1:3,q2:3,q3:3,q4:4,q5:4,q6:3,q7:3,q8:3,q9:3,q10:3,q11:3,q12:3,q13:3,q14:2,q15:2},{q1:4,q2:4,q3:2,q4:4,q5:5,q6:4,q7:4,q8:3,q9:3,q10:2,q11:2,q12:3,q13:2,q14:2,q15:3},{q1:2,q2:2,q3:3,q4:3,q5:3,q6:3,q7:2,q8:2,q9:3,q10:4,q11:3,q12:4,q13:3,q14:3,q15:2},{q1:4,q2:3,q3:2,q4:4,q5:4,q6:4,q7:3,q8:3,q9:2,q10:3,q11:2,q12:3,q13:2,q14:2,q15:1},{q1:3,q2:4,q3:3,q4:5,q5:4,q6:3,q7:4,q8:4,q9:3,q10:2,q11:3,q12:3,q13:3,q14:1,q15:2}]};
 
     function bq(id,s,e){var c=document.getElementById(id);for(var i=s;i<=e;i++){var d=document.createElement('div');d.className='qc';d.dataset.qnum=i;d.innerHTML='<div class="qn">Question '+String(i).padStart(2,'0')+'</div><div class="qt">'+QS[i-1]+'</div><div class="ls" data-qnum="'+i+'"><div class="lo" data-value="1"><div class="lnum">1</div><div class="llt">Strongly Disagree</div></div><div class="lo" data-value="2"><div class="lnum">2</div><div class="llt">Disagree</div></div><div class="lo" data-value="3"><div class="lnum">3</div><div class="llt">Neutral</div></div><div class="lo" data-value="4"><div class="lnum">4</div><div class="llt">Agree</div></div><div class="lo" data-value="5"><div class="lnum">5</div><div class="llt">Strongly Agree</div></div></div>';c.appendChild(d)}}
     bq('g1',1,5);bq('g2',6,10);bq('g3',11,15);
@@ -532,6 +531,10 @@
             alert(d2.detail || 'Submission failed.');
             return;
         }
+        alert('Thank you for completing the survey!');
+        setTimeout(() => {
+            window.location.href = '/';
+        }, 1500);
     } catch(e){
         alert('Could not connect to server.');
         return;
@@ -560,50 +563,10 @@
 
     function updNav(){document.getElementById('pf').style.width=((curStep/TS)*100)+'%';document.getElementById('pt').textContent='Step '+curStep+' of '+TS;document.getElementById('bp').disabled=(curStep===1);document.getElementById('bn').style.display=(curStep===TS)?'none':'inline-block';document.getElementById('bs').style.display=(curStep===TS)?'inline-block':'none'}
 
-    function showR(){
-        document.getElementById('sp').style.display='none';
-        var r=document.getElementById('rs');
-        r.style.display='block';
-        window.scrollTo(0,0);
-        setTimeout(function(){buildC()},100);
-        var tot=(db.female?db.female.length:0)+(db.male?db.male.length:0);
-        if(typeof gsap!=='undefined'){
-            gsap.fromTo('.rh',{opacity:0,y:30},{opacity:1,y:0,duration:.8,ease:'power3.out',delay:.1});
-            gsap.fromTo('.tres',{opacity:0,y:20},{opacity:1,y:0,duration:.7,ease:'power3.out',delay:.4});
-            var ct={v:0};gsap.to(ct,{v:tot,duration:2,ease:'power2.out',delay:.5,onUpdate:function(){document.getElementById('tc').textContent=Math.round(ct.v)}});
-        }else{document.getElementById('tc').textContent=tot}
-        setTimeout(function(){if(typeof ScrollTrigger!=='undefined'){ScrollTrigger.refresh()}},800);
-    }
 
-    function buildC(){
-        var g=document.getElementById('cg');g.innerHTML='';
-        var cards=[];
-        for(var i=0;i<15;i++){
-            var k='q'+(i+1);
-            var fA, mA;
-            if(window._apiResults && window._apiResults[i]){
-            fA = window._apiResults[i].female_avg;
-            mA = window._apiResults[i].male_avg;
-            } else {
-            fA=av(db.female,k); mA=av(db.male,k);
-            }
-            var c=document.createElement('div');c.className='ccard';
-            c.style.opacity='0';c.style.transform='translateY(25px)';
-            c.innerHTML='<div class="cqn">Question '+String(i+1).padStart(2,'0')+'</div><div class="cqt">'+QS[i]+'</div><div class="cduo"><div class="crow"><div class="cgl f">♀ Female</div><div class="bth"><div class="bfh f" data-w="'+(fA/5*100)+'">'+fA.toFixed(2)+' / 5</div></div></div><div class="crow"><div class="cgl m">♂ Male</div><div class="bth"><div class="bfh m" data-w="'+(mA/5*100)+'">'+mA.toFixed(2)+' / 5</div></div></div></div>';
-            g.appendChild(c);cards.push(c);
-        }
-        cards.forEach(function(el,idx){
-            setTimeout(function(){
-                el.style.transition='opacity .6s ease,transform .6s ease';
-                el.style.opacity='1';el.style.transform='translateY(0)';
-            },120+idx*70);
-            setTimeout(function(){
-                el.querySelectorAll('.bfh').forEach(function(b){b.style.width=b.dataset.w+'%'});
-            },450+idx*90);
-        });
-    }
 
-    function av(a,k){if(!a||!a.length)return 0;var s=0,c=0;a.forEach(function(r){if(r[k]!==undefined){s+=r[k];c++}});return c?s/c:0}
+
+
 
     /* CANVAS */
     var cv=document.getElementById('pc'),cx=cv.getContext('2d'),W,H,scrollP=0;
