@@ -427,7 +427,7 @@
         var age=document.getElementById('fage').value.trim();
         var email=document.getElementById('femail').value.trim();
         if(!name){document.getElementById('fname').classList.add('error');document.getElementById('fnameErr').classList.add('show');ok=false}
-        if(!age||parseInt(age)<10||parseInt(age)>99||isNaN(parseInt(age))){document.getElementById('fage').classList.add('error');document.getElementById('fageErr').classList.add('show');ok=false}
+        if(!age||parseInt(age)<16||parseInt(age)>30||isNaN(parseInt(age))){document.getElementById('fage').classList.add('error');document.getElementById('fageErr').classList.add('show');ok=false}
         if(!email||email.indexOf('@')===-1){document.getElementById('femail').classList.add('error');document.getElementById('femailErr').classList.add('show');ok=false}
         if(ok){userName=name;userAge=age;userEmail=email}
         return ok;
