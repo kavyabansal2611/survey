@@ -16,7 +16,7 @@ class Submissions(Base):
     chosen_options=Column(Text)
 class User(BaseModel):
     full_name:str=Field(min_length=1,max_length=100)
-    age:int
+    age: int = Field(ge=16, le=30)
     gender:Literal["M","F"]
     email:EmailStr
 class Quiz(BaseModel):
